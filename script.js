@@ -76,12 +76,13 @@ function initImages() {
 
   // Logos (small, in app topbars)
   ['onboardLogo','homeLogo','bebeLogo','corpoLogo','alimentacaoLogo',
-   'exerciciosLogo','chatLogo','perfilLogo','ajudaLogo','emailLogo'
+   'exerciciosLogo','chatLogo','perfilLogo','ajudaLogo','emailLogo',
+   'notifLogo','configLogo','emailPubLogo'
   ].forEach(id => setSrc(id, IMG.LOGO_SM));
 
   // Avatars in topbars
   ['homeAvatar','bebeAvatar','corpoAvatar','alimentacaoAvatar',
-   'exerciciosAvatar','ajudaAvatar','emailAvatar'
+   'exerciciosAvatar','ajudaAvatar','emailAvatar','notifAvatar','configAvatar'
   ].forEach(id => setSrc(id, IMG.AVATAR));
 
   // Chat bot avatar
@@ -150,15 +151,19 @@ function togglePassword(inputId) {
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
+function isEmailOrPhone(val) {
+  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneReg = /^[\d\s\(\)\-\+]{7,15}$/;
+  return emailReg.test(val) || phoneReg.test(val);
+}
+
 function doLogin() {
   const email = $('loginEmail').value.trim();
   const pass  = $('loginPass').value.trim();
-  if (!email || !pass) {
-    showToast('Preencha e-mail e senha!');
-    return;
-  }
+  if (!email) { showToast('Informe e-mail ou telefone!'); return; }
+  if (!isEmailOrPhone(email)) { showToast('Informe um e-mail ou telefone válido!'); return; }
+  if (!pass)  { showToast('Informe a senha!'); return; }
   state.registered = true;
-  // If onboard already done, go home; else onboard
   if (state.user.altura !== '—') {
     showScreen('screen-home');
   } else {
@@ -169,10 +174,13 @@ function doLogin() {
 function doCadastro() {
   const nome  = $('cadNome').value.trim();
   const email = $('cadEmail').value.trim();
+  const phone = $('cadPhone').value.trim();
   const pass1 = $('cadPass1').value.trim();
   const pass2 = $('cadPass2').value.trim();
   if (!nome)  { showToast('Informe seu nome!'); return; }
-  if (!email) { showToast('Informe o e-mail!'); return; }
+  if (!email && !phone) { showToast('Informe pelo menos e-mail ou telefone!'); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('E-mail inválido!'); return; }
+  if (phone && !/^[\d\s\(\)\-\+]{7,15}$/.test(phone)) { showToast('Telefone inválido!'); return; }
   if (!pass1)  { showToast('Informe a senha!'); return; }
   if (pass1 !== pass2) { showToast('As senhas não coincidem!'); return; }
   state.user.nome = nome;
@@ -341,6 +349,12 @@ function saveOnboard() {
   if (!altVal)  { showToast('Informe sua altura!');            $('oAltura').focus();  return; }
   if (!pesoVal) { showToast('Informe seu peso!');              $('oPeso').focus();    return; }
   if (!dumVal)  { showToast('Informe a data da última menstruação!'); $('oDum').focus(); return; }
+  const dumDate = new Date(dumVal);
+  const today   = new Date(); today.setHours(0,0,0,0);
+  if (isNaN(dumDate.getTime())) { showToast('Data da última menstruação inválida!'); $('oDum').focus(); return; }
+  if (dumDate > today) { showToast('A data da última menstruação não pode ser uma data futura!'); $('oDum').focus(); return; }
+  const diasAtras = (today - dumDate) / (1000 * 60 * 60 * 24);
+  if (diasAtras > 294) { showToast('Data da DUM muito antiga (mais de 42 semanas). Verifique!'); $('oDum').focus(); return; }
   // ────────────────────────────────────────────────────────────
 
   const sem = parseInt(semVal) || 18;
@@ -514,6 +528,23 @@ function setupChat() {
   });
 }
 
+// ─── SETTINGS TOGGLES ─────────────────────────────────────────
+function setupSettingsToggles() {
+  document.addEventListener('click', e => {
+    const tog = e.target.closest('[data-stoggle]');
+    if (!tog) return;
+    tog.classList.toggle('settings-toggle--on');
+    // Se for o toggle de dark mode na tela de config
+    if (tog.dataset.stoggle === 'cfg-dark') {
+      state.dark = tog.classList.contains('settings-toggle--on');
+      applyTheme();
+    }
+  });
+  // Sync config dark toggle with current theme state
+  const cfgDark = $('configDarkToggle');
+  if (cfgDark && state.dark) cfgDark.classList.add('settings-toggle--on');
+}
+
 // ─── FAQ ACCORDION ────────────────────────────────────────────
 function setupFAQ() {
   document.addEventListener('click', e => {
@@ -529,6 +560,7 @@ function setupFAQ() {
 
 // ─── EMAIL FORM ───────────────────────────────────────────────
 function setupEmailForm() {
+  // ── Formulário logado ──────────────────────────────────────
   const msgEl = $('emailMsg');
   if (msgEl) {
     msgEl.addEventListener('input', () => {
@@ -552,6 +584,41 @@ function setupEmailForm() {
     sendBtn.addEventListener('click', () => {
       showToast('E-mail enviado com sucesso! Responderemos em até 48h. ✅');
       setTimeout(() => showScreen('screen-ajuda'), 1500);
+    });
+  }
+
+  // ── Formulário público (sem login) ─────────────────────────
+  const pubMsg = $('pubEmailMsg');
+  if (pubMsg) {
+    pubMsg.addEventListener('input', () => {
+      $('pubEmailCharCount').textContent = pubMsg.value.length + '/1100 caracteres';
+    });
+  }
+
+  const pubAttach = $('pubEmailAttach');
+  const pubFile   = $('pubEmailFileInput');
+  if (pubAttach && pubFile) {
+    pubAttach.addEventListener('click', () => pubFile.click());
+    pubFile.addEventListener('change', () => {
+      const f = pubFile.files[0];
+      if (f) pubAttach.querySelector('div:nth-child(2)').textContent = f.name;
+    });
+  }
+
+  const pubSend = $('btnPubEmailSend');
+  if (pubSend) {
+    pubSend.addEventListener('click', () => {
+      const nome  = $('pubEmailNome').value.trim();
+      const email = $('pubEmailEmail').value.trim();
+      const assunto = $('pubEmailAssunto').value;
+      const msg   = $('pubEmailMsg').value.trim();
+      if (!nome)   { showToast('Informe seu nome!'); return; }
+      if (!email)  { showToast('Informe seu e-mail!'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('E-mail inválido!'); return; }
+      if (!assunto){ showToast('Selecione um assunto!'); return; }
+      if (!msg)    { showToast('Escreva sua mensagem!'); return; }
+      showToast('E-mail enviado! Responderemos em até 48h. ✅');
+      setTimeout(() => showScreen('screen-login'), 1800);
     });
   }
 }
@@ -599,6 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupChat();
   setupFAQ();
   setupEmailForm();
+  setupSettingsToggles();
   setupRecover();
   setupSplash();
 

@@ -47,6 +47,7 @@
         Entrar com Google
       </button>
       <p class="auth-footer">Não tem conta? <a class="auth-link" data-goto="screen-cadastro">Cadastre-se</a></p>
+      <p class="auth-footer"><a class="auth-link auth-link--help" data-goto="screen-email-publico">&#10067; Precisa de ajuda?</a></p>
     </div>
   </div>
   <div class="theme-toggle" id="ttLogin"><img id="tiLogin" class="theme-icon" alt="tema"/><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
@@ -112,23 +113,29 @@
     <h2 class="onboard-title">Para prosseguir preencha suas informações pessoais</h2>
     <p class="onboard-legend"><span class="required">*</span> Campos obrigatórios</p>
     <div class="onboard-grid">
-      <div class="onboard-card">
+      <!-- BLOCO OBRIGATÓRIOS -->
+      <div class="onboard-card onboard-card--required">
+        <p class="onboard-card-section-label">Informações essenciais <span class="required">*</span></p>
         <div class="onboard-field"><label>Idade <span class="required">*</span></label><input class="onboard-input" type="number" placeholder="Digite..." id="oIdade"/></div>
         <div class="onboard-field"><label>Altura (m) <span class="required">*</span></label><input class="onboard-input" type="text" placeholder="Digite..." id="oAltura"/></div>
         <div class="onboard-field"><label>Peso (kg) <span class="required">*</span></label><input class="onboard-input" type="text" placeholder="Digite..." id="oPeso"/></div>
-        <div class="onboard-field"><label>Tipo Sanguíneo</label><input class="onboard-input" type="text" placeholder="Digite..." id="oTipoSang"/></div>
-        <div class="onboard-field"><label>Tempo de Gestação (sem) <span class="required">*</span></label><input class="onboard-input" type="number" placeholder="Digite..." id="oSemanas"/></div>
+        <div class="onboard-field"><label>Tempo de Gestação (sem) <span class="required">*</span></label><input class="onboard-input" type="number" min="1" max="40" placeholder="Digite..." id="oSemanas"/></div>
+        <div class="onboard-field"><label>Data Última Menstruação <span class="required">*</span></label><input class="onboard-input" type="date" id="oDum" max=""/></div>
       </div>
+      <!-- BLOCO OPCIONAL 1 -->
       <div class="onboard-card">
+        <p class="onboard-card-section-label">Saúde &amp; hábitos</p>
+        <div class="onboard-field"><label>Tipo Sanguíneo</label><input class="onboard-input" type="text" placeholder="Digite..." id="oTipoSang"/></div>
         <div class="onboard-field"><label>Uso de Medicamentos</label><input class="onboard-input" type="text" placeholder="Digite..." id="oMeds"/></div>
-        <div class="onboard-field"><label>Pratica de Ativ. Física? (s/n)</label><input class="onboard-input" type="text" placeholder="Digite..." id="oAtiv"/></div>
+        <div class="onboard-field"><label>Pratica Ativ. Física? (s/n)</label><input class="onboard-input" type="text" placeholder="Digite..." id="oAtiv"/></div>
         <div class="onboard-field"><label>Uso de Álcool/Cigarro</label><input class="onboard-input" type="text" placeholder="Digite..." id="oAlcool"/></div>
-        <div class="onboard-field"><label>Gravidez Anterior (s/n)</label><input class="onboard-input" type="text" placeholder="Digite..." id="oGravAnterior"/></div>
         <div class="onboard-field"><label>Sintomas Recentes</label><input class="onboard-input" type="text" placeholder="Digite..." id="oSintomas"/></div>
       </div>
+      <!-- BLOCO OPCIONAL 2 -->
       <div class="onboard-card">
-        <div class="onboard-field"><label>Data Última Menstruação <span class="required">*</span></label><input class="onboard-input" type="date" id="oDum"/></div>
+        <p class="onboard-card-section-label">Histórico &amp; gestação</p>
         <div class="onboard-field"><label>Tipo de Gestação</label><input class="onboard-input" type="text" placeholder="Digite..." id="oTipoGest"/></div>
+        <div class="onboard-field"><label>Gravidez Anterior (s/n)</label><input class="onboard-input" type="text" placeholder="Digite..." id="oGravAnterior"/></div>
         <div class="onboard-field"><label>Doenças Pré-Existentes</label><input class="onboard-input" type="text" placeholder="Digite..." id="oDoencas"/></div>
         <div class="onboard-field"><label>Alergias</label><input class="onboard-input" type="text" placeholder="Digite..." id="oAlergias"/></div>
         <div class="onboard-field"><label>Médico obstetra resp.</label><input class="onboard-input" type="text" placeholder="Digite..." id="oMedico"/></div>
@@ -146,6 +153,7 @@
     <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;" /></div>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
+      <button class="topbar-btn" data-goto="screen-ajuda">Ajuda</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="homeAvatar" class="topbar-avatar-img" alt="perfil"/></button>
       <button class="topbar-btn topbar-btn--sair" data-sair="true">Sair</button>
     </nav>
@@ -530,11 +538,11 @@
         <div class="help-category-icon">&#128172;</div>
         <span class="help-category-label">Fale com a Baby IA</span>
       </div>
-      <div class="help-category-card">
+      <div class="help-category-card" data-goto="screen-notif">
         <div class="help-category-icon">&#128276;</div>
         <span class="help-category-label">Notificações</span>
       </div>
-      <div class="help-category-card">
+      <div class="help-category-card" data-goto="screen-config">
         <div class="help-category-icon">&#9881;</div>
         <span class="help-category-label">Configurações</span>
       </div>
@@ -604,6 +612,66 @@
 </div>
 
 <!-- ===================== ENVIAR E-MAIL ===================== -->
+<!-- ===================== E-MAIL PÚBLICO (sem login) ===================== -->
+<div id="screen-email-publico" class="screen">
+  <header class="topbar">
+    <img src="./assets/logo-white.png" id="emailPubLogo" class="topbar-logo-sm" alt="logo"/>
+    <span class="topbar-title">BabyCare Hub</span>
+    <nav class="topbar-nav" style="margin-left:auto">
+      <button class="topbar-btn" data-goto="screen-login">&#8592; Voltar ao login</button>
+    </nav>
+  </header>
+
+  <div class="email-page fade-in">
+    <h2 class="email-page__title">Precisa de ajuda?</h2>
+    <p class="email-page__sub">Preencha o formulário abaixo e nossa equipe responderá em até 48h.</p>
+
+    <div class="email-form-card">
+      <div class="email-field">
+        <label class="email-field-label">NOME</label>
+        <input class="email-field-input" id="pubEmailNome" type="text" placeholder="Seu nome completo" />
+      </div>
+      <div class="email-field">
+        <label class="email-field-label">E-MAIL PARA RESPOSTA</label>
+        <input class="email-field-input" id="pubEmailEmail" type="email" placeholder="seuemail@exemplo.com" />
+      </div>
+      <div class="email-field">
+        <label class="email-field-label">ASSUNTO</label>
+        <select class="email-field-select" id="pubEmailAssunto">
+          <option value="" disabled selected>Selecione o assunto</option>
+          <option>Problema com login ou cadastro</option>
+          <option>Dúvida sobre o aplicativo</option>
+          <option>Erro no aplicativo</option>
+          <option>Sugestão de melhoria</option>
+          <option>Outro</option>
+        </select>
+      </div>
+      <div class="email-field">
+        <label class="email-field-label">MENSAGEM</label>
+        <div class="email-textarea-wrap">
+          <textarea class="email-field-textarea" id="pubEmailMsg" placeholder="Descreva sua dúvida ou problema com detalhes..." maxlength="1100"></textarea>
+          <span class="email-char-count" id="pubEmailCharCount">0/1100 caracteres</span>
+        </div>
+      </div>
+      <div class="email-field">
+        <label class="email-field-label">ANEXAR ARQUIVO (opcional)</label>
+        <div class="email-attach-area" id="pubEmailAttach">
+          <div class="email-attach-icon">&#128206;</div>
+          <div>Toque para anexar um arquivo</div>
+          <div class="email-attach-hint">PNG, JPG ou PDF · Máx. 5MB</div>
+        </div>
+        <input type="file" id="pubEmailFileInput" accept=".png,.jpg,.jpeg,.pdf" style="display:none"/>
+      </div>
+      <div class="email-form-actions">
+        <button class="btn-email-cancel" data-goto="screen-login">Voltar ao login</button>
+        <button class="btn-email-send" id="btnPubEmailSend">Enviar E-mail</button>
+      </div>
+    </div>
+  </div>
+  <div class="theme-toggle" id="ttEmailPub"><img id="tiEmailPub" class="theme-icon" alt="tema"/><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+</div>
+
+<!-- ===================== E-MAIL (logado) ===================== -->
 <div id="screen-email" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="emailLogo" class="topbar-logo-sm" alt="logo"/>
@@ -666,6 +734,125 @@
     </div>
   </div>
   <div class="theme-toggle" id="ttEmail"><img id="tiEmail" class="theme-icon" alt="tema"/><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+</div>
+
+<!-- ===================== NOTIFICAÇÕES ===================== -->
+<div id="screen-notif" class="screen">
+  <header class="topbar">
+    <img src="./assets/logo-white.png" id="notifLogo" class="topbar-logo-sm" alt="logo"/>
+    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <nav class="topbar-nav">
+      <span class="topbar-nav__item" data-goto="screen-home">Início</span>
+      <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
+      <span class="topbar-nav__item" data-goto="screen-ajuda">Ajuda</span>
+      <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
+      <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="notifAvatar" class="topbar-avatar-img" alt="perfil"/></button>
+      <button class="topbar-btn topbar-btn--sair" data-sair="true">Sair</button>
+    </nav>
+  </header>
+  <main class="page-main fade-in">
+    <div class="page-header">
+      <h2 class="page-title">&#128276; Notificações</h2>
+    </div>
+    <p class="page-subtitle">Gerencie como e quando deseja receber alertas do BabyCare Hub.</p>
+    <div class="settings-card">
+      <div class="settings-section-title">Lembretes de saúde</div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Consulta pré-natal</strong><span>Lembrete antes das consultas agendadas</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle settings-toggle--on" data-stoggle="notif1"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Tomar suplementos</strong><span>Alerta diário no horário escolhido</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle settings-toggle--on" data-stoggle="notif2"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Movimento do bebê</strong><span>Lembrete para contar os chutes diariamente</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle" data-stoggle="notif3"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-title">Atualizações do app</div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Dica semanal</strong><span>Novidades da semana de gestação atual</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle settings-toggle--on" data-stoggle="notif4"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Novidades do BabyCare</strong><span>Recursos e atualizações do aplicativo</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle" data-stoggle="notif5"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-title">Canal de notificação</div>
+      <div class="settings-row settings-row--select">
+        <div class="settings-row-info"><strong>Horário dos lembretes</strong></div>
+        <select class="settings-select"><option>08:00</option><option>09:00</option><option>10:00</option><option selected>12:00</option><option>18:00</option><option>20:00</option></select>
+      </div>
+    </div>
+    <button class="btn-save" style="margin-top:16px;">Salvar preferências</button>
+  </main>
+  <div class="theme-toggle" id="ttNotif"><img id="tiNotif" class="theme-icon" alt="tema"/><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+</div>
+
+<!-- ===================== CONFIGURAÇÕES ===================== -->
+<div id="screen-config" class="screen">
+  <header class="topbar">
+    <img src="./assets/logo-white.png" id="configLogo" class="topbar-logo-sm" alt="logo"/>
+    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <nav class="topbar-nav">
+      <span class="topbar-nav__item" data-goto="screen-home">Início</span>
+      <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
+      <span class="topbar-nav__item" data-goto="screen-ajuda">Ajuda</span>
+      <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
+      <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="configAvatar" class="topbar-avatar-img" alt="perfil"/></button>
+      <button class="topbar-btn topbar-btn--sair" data-sair="true">Sair</button>
+    </nav>
+  </header>
+  <main class="page-main fade-in">
+    <div class="page-header">
+      <h2 class="page-title">&#9881; Configurações</h2>
+    </div>
+    <p class="page-subtitle">Personalize sua experiência no BabyCare Hub.</p>
+    <div class="settings-card">
+      <div class="settings-section-title">Aparência</div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Modo escuro</strong><span>Ativa o tema escuro em todas as telas</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle" id="configDarkToggle" data-stoggle="cfg-dark"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+      <div class="settings-row settings-row--select">
+        <div class="settings-row-info"><strong>Idioma</strong></div>
+        <select class="settings-select"><option selected>Português (BR)</option><option>English</option><option>Español</option></select>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-title">Privacidade</div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Compartilhar dados anônimos</strong><span>Ajuda a melhorar o app</span></div>
+        <div class="settings-toggle-wrap"><div class="settings-toggle settings-toggle--on" data-stoggle="cfg-priv"><div class="settings-toggle-dot"></div></div></div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-title">Conta</div>
+      <div class="settings-row settings-row--btn" data-goto="screen-recover">
+        <div class="settings-row-info"><strong>Alterar senha</strong><span>Redefina sua senha de acesso</span></div>
+        <span class="settings-row-arrow">&#8250;</span>
+      </div>
+      <div class="settings-row settings-row--btn" data-goto="screen-email">
+        <div class="settings-row-info"><strong>Excluir conta</strong><span>Solicitar exclusão permanente dos dados</span></div>
+        <span class="settings-row-arrow settings-row-arrow--danger">&#8250;</span>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-section-title">Sobre</div>
+      <div class="settings-row">
+        <div class="settings-row-info"><strong>Versão do app</strong><span>BabyCare Hub v1.0</span></div>
+      </div>
+      <div class="settings-row settings-row--btn" data-goto="screen-ajuda">
+        <div class="settings-row-info"><strong>Central de Ajuda</strong></div>
+        <span class="settings-row-arrow">&#8250;</span>
+      </div>
+    </div>
+  </main>
+  <div class="theme-toggle" id="ttConfig"><img id="tiConfig" class="theme-icon" alt="tema"/><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
 </div>
 
 <!-- ===================== PERFIL ===================== -->
