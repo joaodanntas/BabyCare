@@ -538,7 +538,7 @@ body.dark .page-subtitle { color: #D0A0A0; }
   flex-wrap: wrap; margin: 16px 0;
 }
 .bebe-col { flex: 1; min-width: 140px; }
-.bebe-col--center { flex: 0 0 180px; display: flex; align-items: center; justify-content: center; }
+.bebe-col--center { flex: 0 0 300px; display: flex; align-items: center; justify-content: center; gap: 12px;}
 .bebe-stat {
   background: rgba(240,128,128,.15);
   border: 1px solid #F5C0C0; border-radius: 10px;
@@ -555,10 +555,12 @@ body.dark .bebe-stat { background: rgba(240,128,128,.2); border-color: #5A3030; 
 }
 body.dark .bebe-tip { background: rgba(240,128,128,.2); border-color: #5A3030; }
 .bebe-feto-img {
-  width: 155px; height: 155px; object-fit: contain;
-  border-radius: 50%; background: #E06060;
-  padding: 4px; box-shadow: 0 4px 18px rgba(200,80,80,.3);
+  width: 135px; height: 135px; object-fit: contain;
+  border-radius: 0; background: transparent;
+  padding: 4px;
+  flex-shrink: 0;
 }
+
 .bebe-bottom-tip {
   text-align: center; font-size: 18px; font-weight: 800;
   color: #C04040; margin: 8px 0 16px;
@@ -600,7 +602,7 @@ body.dark .journey-bar__week { color: #A07070; }
 .chat-msg { display: flex; gap: 10px; align-items: flex-start; }
 .chat-msg--user { flex-direction: row-reverse; }
 .chat-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   object-fit: cover; border: 2px solid #F5C0C0;
   background: #F08080; flex-shrink: 0;
 }
@@ -679,7 +681,7 @@ body.dark .journey-bar__week { color: #A07070; }
   margin: 0 auto 10px; background: #FADADD;
   display: flex; align-items: center; justify-content: center;
 }
-.perfil-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.perfil-avatar-img { width: 82px; height: 110px; object-fit: cover; }
 .btn-change-photo {
   background: none; border: none; color: #C04040;
   font-size: 13px; font-weight: 700; cursor: pointer;

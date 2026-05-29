@@ -353,6 +353,7 @@ function saveOnboard() {
   const today   = new Date(); today.setHours(0,0,0,0);
   if (isNaN(dumDate.getTime())) { showToast('Data da última menstruação inválida!'); $('oDum').focus(); return; }
   if (dumDate > today) { showToast('A data da última menstruação não pode ser uma data futura!'); $('oDum').focus(); return; }
+  if (semVal > 50) { showToast('Tempo de gestação inválido (maior que 50 semanas)!'); $('oSemanas').focus(); return; }
   const diasAtras = (today - dumDate) / (1000 * 60 * 60 * 24);
   if (diasAtras > 294) { showToast('Data da DUM muito antiga (mais de 42 semanas). Verifique!'); $('oDum').focus(); return; }
   // ────────────────────────────────────────────────────────────
@@ -369,6 +370,8 @@ function saveOnboard() {
 
   // Update home
   $('homeWeekDisplay').textContent = sem + 'ª Semana';
+  //Update exercises
+  $('exerWeekDisplay').textContent = sem + 'ª Semana';
 
   // Update all weekly data (fetus size, bebe page, journey bar)
   updateWeeklyData(sem);
