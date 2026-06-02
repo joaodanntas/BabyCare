@@ -4,6 +4,36 @@
 
 'use strict';
 
+// 1. Imports no topo absoluto do ficheiro
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  sendEmailVerification
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+// 2. Configuração das credenciais
+const firebaseConfig = {
+  apiKey: "AIzaSyBh7ig_LsB43K46QBhcPAEt0JCHLklQej8",
+  authDomain: "babycare-11bf3.firebaseapp.com",
+  projectId: "babycare-11bf3",
+  storageBucket: "babycare-11bf3.firebasestorage.app",
+  messagingSenderId: "286996279888",
+  appId: "1:286996279888:web:59e1870b331d7e401d5755",
+  measurementId: "G-MJTTC35S3D"
+};
+
+// 3. Inicialização e criação da constante db (Verifique se escreveu 'db' em minúsculo)
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+auth.useDeviceLanguage();
+
 // ─── STATE ───────────────────────────────────────────────────
 const state = {
   dark: false,
@@ -157,35 +187,205 @@ function isEmailOrPhone(val) {
   return emailReg.test(val) || phoneReg.test(val);
 }
 
-function doLogin() {
-  const email = $('loginEmail').value.trim();
-  const pass  = $('loginPass').value.trim();
+async function doLogin(e) {
+  e.preventDefault();
+  
+  const emailInput = $('loginEmail');
+  const passInput  = $('loginPass');
+
+  if (!emailInput || !passInput) return;
+
+  const email = emailInput.value.trim();
+  const pass  = passInput.value.trim();
+
   if (!email) { showToast('Informe e-mail ou telefone!'); return; }
   if (!isEmailOrPhone(email)) { showToast('Informe um e-mail ou telefone válido!'); return; }
-  if (!pass)  { showToast('Informe a senha!'); return; }
-  state.registered = true;
-  if (state.user.altura !== '—') {
-    showScreen('screen-home');
-  } else {
-    showScreen('screen-onboard');
+  if (!pass) { showToast('Informe a senha!'); return; }
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    const user = userCredential.user;
+    console.log("Usuário logado:", user);
+
+    // 1. TRAVA DE VERIFICAÇÃO DE E-MAIL
+    if (!user.emailVerified) {
+      showToast('Por favor, verifique seu e-mail antes de acessar o aplicativo! ⚠️');
+      await auth.signOut();
+      return;
+    }
+
+    showToast('Verificando perfil...');
+
+    // 2. BUSCA OBRIGATÓRIA NO FIRESTORE
+    // Importa as funções do Firestore necessárias para checar o documento
+    const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+    const userDocRef = doc(db, "usuarios", user.uid); 
+    const userDocSnap = await getDoc(userDocRef);
+
+    state.registered = true;
+
+    // 3. VALIDAÇÃO REAL DOS DADOS DO ONBOARDING
+    if (userDocSnap.exists()) {
+      const dadosBanco = userDocSnap.data();
+
+      // Verifica se o campo semanas existe, não é nulo e não está vazio
+      if (dadosBanco.semanas !== undefined && dadosBanco.semanas !== null && dadosBanco.semanas !== '') {
+        
+        // Se os dados existem no banco, preenchemos o seu 'state' global para a Home não ficar em branco
+        state.user = {
+          nome: dadosBanco.nome || 'Gestante',
+          semanas: dadosBanco.semanas,
+          altura: dadosBanco.altura || '-',
+          peso: dadosBanco.peso || '-',
+          dum: dadosBanco.dum || '',
+          // adicione outros campos do seu Firestore aqui se necessário...
+        };
+
+        // Atualiza elementos visuais da Home se eles já existirem no DOM
+        if ($('homeWeekDisplay')) $('homeWeekDisplay').textContent = dadosBanco.semanas + 'ª Semana';
+        
+        showToast('Bem-vinda de volta! 🎉');
+        showScreen('screen-home');
+      } else {
+        // Documento existe no banco, mas a pessoa fechou o app antes de responder o Onboarding
+        console.log("Documento existe, mas falta preencher as semanas.");
+        showScreen('screen-onboard');
+      }
+    } else {
+      // É o primeiro login dela ou ela nunca salvou nada no Firestore: manda direto pro Onboarding
+      console.log("Nenhum dado encontrado no Firestore para este UID.");
+      showScreen('screen-onboard');
+    }
+  } catch (error) {
+    console.error("Erro no login:", error.code);
+    if (error.code === 'auth/user-not-found') {
+      showToast('Este e-mail não está cadastrado no sistema.');
+    } else if (error.code === 'auth/wrong-password') {
+      showToast('Senha incorreta! Tente novamente.');
+    } else {
+      showToast('Erro ao entrar. Tente novamente.');
+    }
   }
 }
 
-function doCadastro() {
-  const nome  = $('cadNome').value.trim();
-  const email = $('cadEmail').value.trim();
-  const phone = $('cadPhone').value.trim();
-  const pass1 = $('cadPass1').value.trim();
-  const pass2 = $('cadPass2').value.trim();
-  if (!nome)  { showToast('Informe seu nome!'); return; }
+async function doGoogleLogin(e) {
+  if (e) e.preventDefault();
+
+  // Inicializa o provedor do Google
+  const provider = new GoogleAuthProvider();
+
+  try {
+    showToast('A ligar ao Google...');
+    
+    // Abre a janela flutuante para login
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Guarda o nome do utilizador do Google no nosso state local
+    state.user.nome = user.displayName || 'Utilizadora';
+    
+    showToast(`Bem-vinda, ${state.user.nome}! 🎉`);
+
+    // SEGUNDA MÁGICA: Como ela logou com o Google, vamos verificar se ela já fez o Onboarding antes
+    try {
+      const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+      const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+      
+      if (userDoc.exists()) {
+        // Se já tem dados salvos no Firestore, pula o onboarding e vai direto para a Home!
+        const dados = userDoc.data();
+        state.user.semanas = dados.semanas;
+        state.registered = true;
+        
+        // Atualiza os dados na tela Home e Perfil (pode chamar as suas funções de update aqui se necessário)
+        if ($('homeWeekDisplay')) $('homeWeekDisplay').textContent = dados.semanas + 'ª Semana';
+        if ($('perfilName')) $('perfilName').textContent = state.user.nome;
+        
+        showScreen('screen-home');
+      } else {
+        // Se é a primeira vez dela no app, manda para o Onboarding para preencher peso/altura
+        showScreen('screen-onboard');
+      }
+    } catch (fsError) {
+      console.error("Erro ao checar Firestore:", fsError);
+      // Por segurança, se falhar a checagem, manda para o Onboarding
+      showScreen('screen-onboard');
+    }
+
+  } catch (error) {
+    console.error("Erro no login com Google:", error.code);
+    if (error.code === 'auth/popup-closed-by-user') {
+      showToast('Login cancelado: fechou a janela do Google.');
+    } else {
+      showToast('Erro ao entrar com o Google. Tente novamente.');
+    }
+  }
+}
+
+async function doCadastro(e) {
+  e.preventDefault();
+
+  const nomeEl  = $('cadNome');
+  const emailEl = $('cadEmail');
+  const phoneEl = $('cadPhone');
+  const pass1El = $('cadPass1');
+  const pass2El = $('cadPass2');
+
+  // Se a tela de cadastro não estiver renderizada ainda, evita o erro de null
+  if (!nomeEl || !emailEl || !pass1El) return;
+
+  const nome   = nomeEl.value.trim();
+  const email  = emailEl.value.trim();
+  const phone  = phoneEl.value.trim();
+  const pass1  = pass1El.value.trim();
+  const pass2  = pass2El.value.trim();
+
+  if (!nome) { showToast('Informe seu nome!'); return; }
   if (!email && !phone) { showToast('Informe pelo menos e-mail ou telefone!'); return; }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('E-mail inválido!'); return; }
-  if (phone && !/^[\d\s\(\)\-\+]{7,15}$/.test(phone)) { showToast('Telefone inválido!'); return; }
-  if (!pass1)  { showToast('Informe a senha!'); return; }
+  if (!pass1) { showToast('Informe a senha!'); return; }
   if (pass1 !== pass2) { showToast('As senhas não coincidem!'); return; }
-  state.user.nome = nome;
-  state.registered = true;
-  showScreen('screen-onboard');
+  if (pass1.length < 6) { showToast('A senha deve ter pelo menos 6 caracteres!'); return; }
+
+  try {
+    // 1. Cria a conta no Firebase Auth com e-mail e senha
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass1);
+    const user = userCredential.user;
+    console.log("Usuário criado:", user);
+
+    showToast('Enviando e-mail de verificação...');
+
+    // 2. MÁGICA: Dispara o e-mail oficial de validação do Firebase
+    await sendEmailVerification(user);
+
+    // Salva o nome localmente no state para quando ela voltar logada
+    state.user.nome = nome;
+    state.registered = true;
+
+    showToast('Conta criada com sucesso! Verifique sua caixa de entrada para ativar. 📬');
+
+    // 3. Desloga o usuário para forçá-lo a fazer login apenas após validar o link
+    await auth.signOut();
+    
+    // 4. Redireciona de volta para a tela de login
+    showScreen('screen-login');
+
+  } catch (error) {
+    console.error("Erro no cadastro:", error.code);
+    if (error.code === 'auth/email-already-in-use') {
+      showToast('Este e-mail já está cadastrado.');
+    } else if (error.code === 'auth/weak-password') {
+      showToast('Senha muito fraca! Escolha uma com 6 ou mais dígitos.');
+    } else if (error.code === 'auth/invalid-email') {
+      showToast('O formato do e-mail digitado é inválido.');
+    } else if (error.code === 'auth/user-not-found') {
+      showToast('Este e-mail não está cadastrado no sistema.');
+    } else if (error.code === 'auth/wrong-password') {
+      showToast('Senha incorreta! Tente novamente.');
+    } else {
+      showToast('Erro ao realizar cadastro. Tente novamente.');
+    }
+  }
 }
 
 function doLogout() {
@@ -336,68 +536,118 @@ function updateWeeklyData(sem) {
 }
 
 // ─── ONBOARDING ───────────────────────────────────────────────
-function saveOnboard() {
+async function saveOnboard(e) {
+  if (e) e.preventDefault();
+  
+  const user = auth.currentUser;
+  if (!user) {
+    showToast('Erro: Utilizador não identificado. Faça login novamente.');
+    showScreen('screen-login');
+    return;
+  }
+  
   // ── Campos obrigatórios ──────────────────────────────────────
-  const semVal  = $('oSemanas').value.trim();
-  const idadeVal= $('oIdade').value.trim();
-  const altVal  = $('oAltura').value.trim();
-  const pesoVal = $('oPeso').value.trim();
-  const dumVal  = $('oDum').value;
+  const semVal   = $('oSemanas').value.trim();
+  const idadeVal = $('oIdade').value.trim();
+  const altVal   = $('oAltura').value.trim();
+  const pesoVal  = $('oPeso').value.trim();
+  const dumVal   = $('oDum').value;
 
-  if (!semVal)  { showToast('Informe as semanas de gestação!'); $('oSemanas').focus(); return; }
-  if (!idadeVal){ showToast('Informe sua idade!');              $('oIdade').focus();   return; }
-  if (!altVal)  { showToast('Informe sua altura!');            $('oAltura').focus();  return; }
-  if (!pesoVal) { showToast('Informe seu peso!');              $('oPeso').focus();    return; }
-  if (!dumVal)  { showToast('Informe a data da última menstruação!'); $('oDum').focus(); return; }
+  if (!semVal)   { showToast('Informe as semanas de gestação!'); $('oSemanas').focus(); return; }
+  if (!idadeVal) { showToast('Informe sua idade!');              $('oIdade').focus();   return; }
+  if (!altVal)   { showToast('Informe sua altura!');            $('oAltura').focus();  return; }
+  if (!pesoVal)  { showToast('Informe seu peso!');              $('oPeso').focus();    return; }
+  if (!dumVal)   { showToast('Informe a data da última menstruação!'); $('oDum').focus(); return; }
+  
   const dumDate = new Date(dumVal);
   const today   = new Date(); today.setHours(0,0,0,0);
+  
   if (isNaN(dumDate.getTime())) { showToast('Data da última menstruação inválida!'); $('oDum').focus(); return; }
   if (dumDate > today) { showToast('A data da última menstruação não pode ser uma data futura!'); $('oDum').focus(); return; }
   if (semVal > 50) { showToast('Tempo de gestação inválido (maior que 50 semanas)!'); $('oSemanas').focus(); return; }
+  
   const diasAtras = (today - dumDate) / (1000 * 60 * 60 * 24);
   if (diasAtras > 294) { showToast('Data da DUM muito antiga (mais de 42 semanas). Verifique!'); $('oDum').focus(); return; }
   // ────────────────────────────────────────────────────────────
 
   const sem = parseInt(semVal) || 18;
-  state.user.idade     = idadeVal;
-  state.user.altura    = altVal;
-  state.user.peso      = pesoVal;
-  state.user.sang      = $('oTipoSang').value  || '—';
-  state.user.semanas   = sem;
-  state.user.ativFisica= $('oAtiv').value      || '—';
-  state.user.tipoGest  = $('oTipoGest').value  || 'Única';
-  state.user.medico    = $('oMedico').value    || '—';
+  
+  // Capturando as variáveis locais auxiliares antes de subir para a nuvem
+  const sangVal   = $('oTipoSang').value  || '—';
+  const ativVal   = $('oAtiv').value      || '—';
+  const gestVal   = $('oTipoGest').value  || 'Única';
+  const medicoVal = $('oMedico').value    || '—';
 
-  // Update home
-  $('homeWeekDisplay').textContent = sem + 'ª Semana';
-  //Update exercises
-  $('exerWeekDisplay').textContent = sem + 'ª Semana';
+  // 1. Criar o objeto com a estrutura idêntica para o Firestore Database
+  const dadosOnboarding = {
+    nome: state.user.nome || 'Utilizadora',
+    idade: idadeVal,
+    altura: altVal,
+    peso: pesoVal,
+    semanas: sem,
+    dum: dumVal,
+    tipoSanguineo: sangVal,
+    praticaExercicio: ativVal,
+    tipoGestacao: gestVal,
+    medicoResponsavel: medicoVal,
+    atualizadoEm: new Date().toISOString()
+  };
 
-  // Update all weekly data (fetus size, bebe page, journey bar)
-  updateWeeklyData(sem);
+  try {
+    showToast('A guardar dados na nuvem...');
 
-  // Calculate DPP from DUM
-  if (dumVal) {
-    const dum   = new Date(dumVal);
-    const dpp   = new Date(dum.getTime() + 280 * 864e5);
-    const months= ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const wk    = Math.ceil(dpp.getDate() / 7);
-    const ord   = ['1ª','2ª','3ª','4ª','5ª'];
-    $('homePartoPrev').textContent = (ord[wk-1]||'') + ' Semana de ' + months[dpp.getMonth()];
+    // 2. MÁGICA: Grava os dados usando o UID exclusivo gerado na tela de cadastro
+    await setDoc(doc(db, "usuarios", user.uid), dadosOnboarding);
+
+    // 3. Atualiza o State local da aplicação (Se o banco aceitar com sucesso)
+    state.user.idade      = idadeVal;
+    state.user.altura     = altVal;
+    state.user.peso       = pesoVal;
+    state.user.sang       = sangVal;
+    state.user.semanas    = sem;
+    state.user.ativFisica = ativVal;
+    state.user.tipoGest   = gestVal;
+    state.user.medico     = medicoVal;
+    state.registered      = true;
+
+    // 4. Toda a sua lógica original de Update das Telas permanece intacta:
+    
+    // Update home
+    $('homeWeekDisplay').textContent = sem + 'ª Semana';
+    // Update exercises
+    $('exerWeekDisplay').textContent = sem + 'ª Semana';
+
+    // Update all weekly data (fetus size, bebe page, journey bar)
+    updateWeeklyData(sem);
+
+    // Calculate DPP from DUM
+    if (dumVal) {
+      const dum    = new Date(dumVal);
+      const dpp    = new Date(dum.getTime() + 280 * 864e5);
+      const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const wk     = Math.ceil(dpp.getDate() / 7);
+      const ord    = ['1ª','2ª','3ª','4ª','5ª'];
+      $('homePartoPrev').textContent = (ord[wk-1]||'') + ' Semana de ' + months[dpp.getMonth()];
+    }
+
+    // Perfil display
+    $('perfilName').textContent = state.user.nome;
+    $('perfilAge').textContent  = state.user.idade !== '—' ? state.user.idade + ' anos' : '—';
+    $('perfilWeek').textContent = sem + 'ª Semana';
+    $('pdAltura').textContent   = state.user.altura !== '—' ? state.user.altura + ' m' : '—';
+    $('pdPeso').textContent     = state.user.peso   !== '—' ? '~ ' + state.user.peso + ' kg' : '—';
+    $('pdSang').textContent     = state.user.sang;
+    $('pdTipoGest').textContent = state.user.tipoGest;
+    $('pdAtiv').textContent     = state.user.ativFisica;
+
+    showToast('Dados guardados com sucesso! 🌟');
+    showScreen('screen-home');
+
+  } catch (error) {
+    console.error("Erro ao salvar no Firestore:", error);
+    showToast('Erro ao sincronizar com o banco de dados. Tente novamente.');
   }
-
-  // Perfil display
-  $('perfilName').textContent = state.user.nome;
-  $('perfilAge').textContent  = state.user.idade !== '—' ? state.user.idade + ' anos' : '—';
-  $('perfilWeek').textContent = sem + 'ª Semana';
-  $('pdAltura').textContent   = state.user.altura !== '—' ? state.user.altura + ' m' : '—';
-  $('pdPeso').textContent     = state.user.peso   !== '—' ? '~ ' + state.user.peso + ' kg' : '—';
-  $('pdSang').textContent     = state.user.sang;
-  $('pdTipoGest').textContent = state.user.tipoGest;
-  $('pdAtiv').textContent     = state.user.ativFisica;
-
-  showScreen('screen-home');
 }
 
 // ─── CHAT ─────────────────────────────────────────────────────
@@ -649,11 +899,44 @@ function showToast(msg) {
 }
 
 // ─── RECOVER ─────────────────────────────────────────────────
-function setupRecover() {
-  const btn = $('btnRecover');
-  if (btn) btn.addEventListener('click', () => {
-    showToast('Código enviado! Verifique seu e-mail ou SMS. ✅');
-  });
+async function doRecoverPassword(e) {
+  if (e) e.preventDefault();
+
+  // Procura o input de texto especificamente dentro da sua tela de recuperação
+  const emailInput = document.querySelector('#screen-recover .auth-input');
+  
+  if (!emailInput || !emailInput.value.trim()) {
+    showToast('Por favor, digite o seu e-mail cadastrado!');
+    if (emailInput) emailInput.focus();
+    return;
+  }
+
+  const email = emailInput.value.trim();
+
+  try {
+    showToast('Enviando e-mail de redefinição...');
+    
+    // O Firebase assume o disparo do e-mail de redefinição
+    await sendPasswordResetEmail(auth, email);
+
+    showToast('E-mail enviado com sucesso! Verifique sua caixa de entrada. 📬');
+    
+    // Limpa o campo para a próxima vez e joga de volta para o Login
+    emailInput.value = '';
+    showScreen('screen-login');
+
+  } catch (error) {
+    console.error("Erro na recuperação:", error.code);
+    
+    // Tratamento de erros amigável
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      showToast('Este e-mail não está cadastrado no sistema.');
+    } else if (error.code === 'auth/invalid-email') {
+      showToast('O formato do e-mail digitado é inválido.');
+    } else {
+      showToast('Erro ao enviar e-mail de recuperação. Tente novamente.');
+    }
+  }
 }
 
 // ─── SPLASH AUTO-ADVANCE ─────────────────────────────────────
@@ -670,13 +953,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFAQ();
   setupEmailForm();
   setupSettingsToggles();
-  setupRecover();
   setupSplash();
 
   // Auth buttons
   $('btnLogin').addEventListener('click', doLogin);
   $('btnCadastro').addEventListener('click', doCadastro);
   $('btnSaveOnboard').addEventListener('click', saveOnboard);
+  $('btnGoogleLogin').addEventListener('click', doGoogleLogin);
+  $('btnRecover').addEventListener('click', doRecoverPassword);
 
   // Initialize weekly display with default semana
   updateWeeklyData(state.user.semanas);

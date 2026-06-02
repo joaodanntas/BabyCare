@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BabyCare Hub</title>
   <link rel="stylesheet" href="style.css" />
-</head>
+  <link rel="icon" type="image/x-icon" href="./assets/favicon.ico"></head>
+<script type="module" src="script.js"></script>
 <body class="light">
 
 <!-- ===================== SPLASH ===================== -->
@@ -37,7 +38,7 @@
       </div>
       <button class="btn-primary" id="btnLogin">Entrar</button>
       <div class="auth-divider"><span>ou</span></div>
-      <button class="btn-google">
+      <button id="btnGoogleLogin" class="btn-google">
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -90,9 +91,9 @@
   <div class="auth-page auth-page--padded">
     <div class="auth-card fade-in">
       <h2 class="auth-card__title">Recuperação de conta</h2>
-      <p class="auth-card__sub">Insira seu e-mail ou telefone e enviaremos um código de verificação.</p>
-      <input class="auth-input" type="text" placeholder="Email/Telefone..." />
-      <div class="recover-info-box">Você receberá um código por SMS ou e-mail para redefinir sua senha.</div>
+      <p class="auth-card__sub">Insira seu e-mail e enviaremos um código de verificação.</p>
+      <input class="auth-input" type="text" placeholder="Email..." />
+      <div class="recover-info-box">Você receberá um código por e-mail para redefinir sua senha.</div>
       <button class="btn-primary" id="btnRecover">Enviar código</button>
     </div>
   </div>
@@ -103,11 +104,8 @@
 <div id="screen-onboard" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="onboardLogo" class="topbar-logo-sm" alt="logo" />
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;" /></div>
-    <nav class="topbar-nav">
-      <span class="topbar-nav__item" data-goto="screen-home">Início</span>
-      <span class="topbar-nav__item" data-goto="screen-ajuda">Ajuda</span>
-    </nav>
+    <span class="topbar-title">BabyCare Hub</span>
+    <button class="topbar-btn topbar-btn--sair" data-sair="true">Sair</button>
   </header>
   <div class="onboard-page">
     <h2 class="onboard-title">Para prosseguir preencha suas informações pessoais</h2>
@@ -150,7 +148,7 @@
 <div id="screen-home" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="homeLogo" class="topbar-logo-sm" alt="logo" />
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;" /></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-btn" data-goto="screen-ajuda">Ajuda</button>
@@ -203,7 +201,7 @@
 <div id="screen-bebe" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="bebeLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="bebeAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -252,7 +250,7 @@
 <div id="screen-corpo" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="corpoLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="corpoAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -322,7 +320,7 @@
 <div id="screen-alimentacao" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="alimentacaoLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="alimentacaoAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -390,7 +388,7 @@
 <div id="screen-exercicios" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="exerciciosLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="exerciciosAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -497,7 +495,7 @@
 <div id="screen-ajuda" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="ajudaLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <span class="topbar-nav__item" data-goto="screen-home">Início</span>
       <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
@@ -513,10 +511,6 @@
     <div class="help-hero">
       <h2 class="help-hero__title">Como podemos te ajudar? 🌸</h2>
       <p class="help-hero__sub">Encontre respostas rápidas ou fale com nossa assistente</p>
-      <div class="help-search-wrap">
-        <span class="help-search-icon">&#128269;</span>
-        <input class="help-search" type="text" placeholder="Ex.: Como atualizar minha semana de gestação..." />
-      </div>
     </div>
 
     <!-- Categories -->
@@ -562,38 +556,38 @@
       </div>
       <div class="faq-item">
         <div class="faq-item__header">
-          <span>Como atualizo minha semana de gestação?</span>
+          <span>Como o BabyCare Hub calcula a minha Data Provável do Parto (DPP)?</span>
           <span class="faq-item__toggle">+</span>
         </div>
         <div class="faq-item__body">
-          Vá até seu Perfil, clique em "Editar" e atualize o campo "Tempo de Gestação (sem)" com a semana atual informada pelo seu médico.
+          O cálculo é feito de forma automática com base na Data da sua Última Menstruação (DUM) que você informou no início. Somamos 280 dias (40 semanas) a essa data para estimar a semana exata em que o seu bebê deve nascer!
         </div>
       </div>
       <div class="faq-item">
         <div class="faq-item__header">
-          <span>Como funciona o modo escuro?</span>
+          <span>O que acontece com os dados físicos (peso, exames, diário) que eu registro aqui?</span>
           <span class="faq-item__toggle">+</span>
         </div>
         <div class="faq-item__body">
-          O modo escuro pode ser ativado pelo botão no canto inferior esquerdo de qualquer tela. Ele ajusta as cores do app para uma experiência mais confortável em ambientes com pouca luz.
+          Todos os seus dados de onboarding e registros são salvos de forma privada e segura na nuvem. Eles ficam vinculados exclusivamente à sua conta em tempo real, o que significa que você pode deslogar ou trocar de dispositivo sem medo de perder o seu histórico.
         </div>
       </div>
       <div class="faq-item">
         <div class="faq-item__header">
-          <span>Posso usar o BabyCare Hub em mais de um dispositivo?</span>
+          <span>O desenvolvimento do bebê muda a cada semana no aplicativo?</span>
           <span class="faq-item__toggle">+</span>
         </div>
         <div class="faq-item__body">
-          Sim! Basta fazer login com a mesma conta em qualquer dispositivo. Suas informações ficam salvas e sincronizadas automaticamente.
+          Sim! Conforme as semanas avançam, a sua tela principal e a página do bebê são atualizadas automaticamente com o tamanho estimado do feto (comparado a alimentos), marcos de desenvolvimento e sugestões de atividades físicas ideais para o seu período gestacional.
         </div>
       </div>
       <div class="faq-item">
         <div class="faq-item__header">
-          <span>Como redefinir minha senha?</span>
+          <span>Esqueci minha senha ou quero alterá-la, o que devo fazer?</span>
           <span class="faq-item__toggle">+</span>
         </div>
         <div class="faq-item__body">
-          Na tela de login, clique em "Esqueceu a senha?" e informe seu e-mail ou telefone cadastrado. Você receberá um código para criar uma nova senha.
+          Na tela de login, basta clicar em "Esqueceu a senha?". Insira o seu e-mail cadastrado e você receberá um link oficial em sua caixa de entrada para redefinir sua senha com total segurança em poucos segundos.
         </div>
       </div>
     </div>
@@ -675,7 +669,7 @@
 <div id="screen-email" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="emailLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <span class="topbar-nav__item" data-goto="screen-home">Início</span>
       <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
@@ -740,7 +734,7 @@
 <div id="screen-notif" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="notifLogo" class="topbar-logo-sm" alt="logo"/>
-    <div class="topbar-search-wrap"><input class="topbar-search" type="text" placeholder="&#128269;"/></div>
+    <span class="topbar-title">BabyCare Hub</span>
     <nav class="topbar-nav">
       <span class="topbar-nav__item" data-goto="screen-home">Início</span>
       <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
@@ -871,7 +865,7 @@
     <span class="perfil-sep">|</span>
     <span id="perfilAge">—</span>
     <span class="perfil-sep">|</span>
-    <span id="perfilWeek">18ª Semana</span>
+    <span id="perfilWeek">— Semana</span>
   </div>
   <main class="perfil-main fade-in">
     <div class="perfil-layout">
@@ -896,8 +890,5 @@
   </main>
   <div class="theme-toggle" id="ttPerfil"><img id="tiPerfil" class="theme-icon" alt="tema"/><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
 </div>
-
-<script src="images.js"></script>
-<script src="script.js"></script>
 </body>
 </html>
