@@ -674,7 +674,13 @@ body.dark .journey-bar__week { color: #A07070; }
   margin: 0 auto 10px; background: #FADADD;
   display: flex; align-items: center; justify-content: center;
 }
-.perfil-avatar-img { width: 82px; height: 110px; object-fit: cover; }
+.perfil-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
 .btn-change-photo {
   background: none; border: none; color: #C04040;
   font-size: 13px; font-weight: 700; cursor: pointer;

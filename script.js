@@ -398,6 +398,10 @@ function doLogout() {
 // ─── FUNÇÃO PARA EXPULSAR OS TRAÇOS E INJETAR OS DADOS REAIS ───
 function renderAppPerfil(dados) {
   if (!dados) return;
+  
+  if ($('perfilAvatarImg') && dados.fotoPerfil) {
+    $('perfilAvatarImg').src = dados.fotoPerfil;
+  }
 
   // 1. Atualizações da Tela Home (Início)
   if ($('homeWeekDisplay') && dados.semanas) {
@@ -451,6 +455,60 @@ function renderAppPerfil(dados) {
   if ($('pdSang'))     $('pdSang').textContent     = dados.tipoSanguineo || '—';
   if ($('pdTipoGest')) $('pdTipoGest').textContent = dados.tipoGestacao || '—';
   if ($('pdAtiv'))     $('pdAtiv').textContent     = dados.praticaExercicio || '—';
+}
+
+function acionarSeletorFoto() {
+  const picker = $('filePhotoPicker');
+  if (picker) picker.click();
+}
+
+// 2. Função que processa a foto escolhida e envia para o Firebase
+function processarNovaFoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Validação simples: não deixa subir arquivos maiores que 1.5MB para não estourar o Firestore
+  if (file.size > 1024 * 1024 * 1.5) {
+    showToast('Escolha uma foto mais leve (máximo 1.5MB)! ⚠️');
+    return;
+  }
+
+  const reader = new FileReader();
+  
+  // Quando o navegador terminar de converter a imagem em texto:
+  reader.onload = async function(event) {
+    const base64String = event.target.result;
+
+    // Atualiza a foto imediatamente na tela do usuário
+    if ($('perfilAvatarImg')) $('perfilAvatarImg').src = base64String;
+
+    // Salva na nuvem se o usuário estiver logado
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        showToast('Atualizando foto de perfil...');
+        
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const userDocRef = doc(db, "usuarios", user.uid);
+        
+        // Atualiza apenas o campo "fotoPerfil" no documento dela
+        await updateDoc(userDocRef, {
+          fotoPerfil: base64String
+        });
+
+        // Atualiza o state local do app
+        if (state.user) state.user.fotoPerfil = base64String;
+
+        showToast('Foto de perfil atualizada! 📸');
+      } catch (error) {
+        console.error("Erro ao salvar foto no Firestore:", error);
+        showToast('Erro ao salvar a foto na nuvem.');
+      }
+    }
+  };
+
+  // Dispara a conversão do arquivo
+  reader.readAsDataURL(file);
 }
 
 // ─── DADOS SEMANAIS DO BEBÊ ───────────────────────────────────
@@ -1040,6 +1098,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnSaveOnboard').addEventListener('click', saveOnboard);
   $('btnGoogleLogin').addEventListener('click', doGoogleLogin);
   $('btnRecover').addEventListener('click', doRecoverPassword);
+  if ($('btnChangePhoto')) $('btnChangePhoto').addEventListener('click', acionarSeletorFoto);
+  if ($('filePhotoPicker')) $('filePhotoPicker').addEventListener('change', processarNovaFoto);
   monitorarSessao();
 
   // Initialize weekly display with default semana
