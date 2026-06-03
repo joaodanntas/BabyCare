@@ -17,6 +17,7 @@ import {
   sendEmailVerification,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { GoogleGenAI } from "https://esm.run/@google/genai";
 
 // 2. Configuração das credenciais
 const firebaseConfig = {
@@ -407,6 +408,10 @@ function renderAppPerfil(dados) {
   if ($('homeWeekDisplay') && dados.semanas) {
     $('homeWeekDisplay').textContent = dados.semanas + 'ª Semana';
   }
+  
+  if ($('chipSemana') && dados.semanas) {
+    $('chipSemana').textContent = `Como estou na ${dados.semanas}ª semana?`;
+  }
 
   // CÁLCULO DA DPP POR EXTENSO (IGUAL AO SEU IF DO ONBOARDING)
   if ($('homePartoPrev') && dados.dum) {
@@ -757,16 +762,33 @@ async function saveOnboard(e) {
 }
 
 // ─── CHAT ─────────────────────────────────────────────────────
+
+// 1. Inicialização da API do Gemini (Mantenha fora das funções)
+const ai = new GoogleGenAI({ apiKey: "AQ.Ab8RN6K68hpasNhEvG2NuHjxNZOIhF6rYpANKP8kGuEcf18pfg" });
+
+// 2. Adiciona a mensagem visual usando a estrutura real do seu HTML
 function addChatMessage(role, text) {
   const isUser = role === 'user';
-  const body   = $('chatBody');
+  
+  const body = document.getElementById('chatMessages'); 
+  if (!body) return;
 
   const wrap = document.createElement('div');
   wrap.className = 'chat-msg ' + (isUser ? 'chat-msg--user' : 'chat-msg--bot');
 
   const avatar = document.createElement('img');
   avatar.className = 'chat-avatar';
-  avatar.src = isUser ? IMG.AVATAR : IMG.LOGO_SM;
+  
+  if (isUser) {
+    // Busca a foto em String Base64 direto do estado da aplicação sincronizada com o Firestore
+    if (typeof state !== 'undefined' && state.user && state.user.fotoPerfil) {
+      avatar.src = state.user.fotoPerfil;
+    } else {
+      avatar.src = './assets/perfil-avatar.png'; // Fallback padrão caso não tenha foto
+    }
+  } else {
+    avatar.src = './assets/chatbot-avatar.png';
+  }
   avatar.alt = isUser ? 'Você' : 'Baby IA';
 
   const textWrap = document.createElement('div');
@@ -776,31 +798,49 @@ function addChatMessage(role, text) {
 
   const bubble = document.createElement('div');
   bubble.className = 'chat-bubble ' + (isUser ? 'chat-bubble--user' : 'chat-bubble--bot');
-  // Render line breaks and bullet lists
-  bubble.innerHTML = text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\n/g,'<br>')
-    .replace(/• /g,'<br>• ');
+  
+  // Formata os marcadores de Negrito (Markdown) vindos do Gemini
+  let formattedText = text
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>')
+    .replace(/• /g, '<br>• ');
 
+  bubble.innerHTML = formattedText;
+
+  // Montagem padrão: Coloca primeiro o avatar e depois o bloco de textos
+  // O CSS se encarrega de mover a foto para a direita se for a classe --user!
   textWrap.appendChild(sender);
   textWrap.appendChild(bubble);
   wrap.appendChild(avatar);
   wrap.appendChild(textWrap);
+  
   body.appendChild(wrap);
+  
+  // Scroll suave automático para a última mensagem
   body.scrollTop = body.scrollHeight;
 
-  state.chatHistory.push({ role: isUser ? 'user' : 'assistant', content: text });
+  if (typeof state !== 'undefined' && state.chatHistory) {
+    state.chatHistory.push({ role: isUser ? 'user' : 'assistant', content: text });
+  }
 }
 
+// 3. Adiciona os pontinhos animados de digitando...
 function addTypingIndicator() {
-  const body = $('chatBody');
+  const body = document.getElementById('chatMessages');
+  if (!body) return;
+  
+  if (document.getElementById('typingIndicator')) return; // Evita duplicar
+
   const wrap = document.createElement('div');
   wrap.className = 'chat-msg chat-msg--bot';
   wrap.id = 'typingIndicator';
 
   const avatar = document.createElement('img');
   avatar.className = 'chat-avatar';
-  avatar.src = IMG.LOGO_SM;
+  avatar.src = './assets/chatbot-avatar.png';
 
   const textWrap = document.createElement('div');
   const sender   = document.createElement('p');
@@ -819,72 +859,97 @@ function addTypingIndicator() {
   body.scrollTop = body.scrollHeight;
 }
 
+// 4. Remove o indicador visual de digitação
 function removeTypingIndicator() {
-  const el = $('typingIndicator');
+  const el = document.getElementById('typingIndicator');
   if (el) el.remove();
 }
 
+// 5. Motor principal que envia os dados para o Gemini
 async function sendMessage() {
-  const input = $('chatInput');
-  const text  = input.value.trim();
-  if (!text) return;
+  const input = document.getElementById('chatInput');
+  const btnEnviar = document.getElementById('btnSendChat');
+  
+  if (!input) return;
+  
+  const text = input.value.trim();
+  if (!text) return; // Se a caixa estiver vazia, não faz nada (proteção contra o clique vazio)
+  
+  // Limpa o campo de texto e desativa temporariamente o botão de enviar
   input.value = '';
-  $('chatSendBtn').disabled = true;
+  if (btnEnviar) btnEnviar.disabled = true;
 
+  // Adiciona a pergunta do usuário na tela e exibe a animação da IA "pensando"
   addChatMessage('user', text);
   addTypingIndicator();
 
-  const systemPrompt = `Você é a Baby IA, assistente virtual especializada em gestação e cuidados pré-natais do BabyCare Hub.
-Você é carinhosa, empática e informativa. A usuária está na semana ${state.user.semanas} de gestação.
-Responda sempre em português brasileiro de forma acolhedora e clara.
-Use • como marcador de listas quando listar dicas ou itens.
-IMPORTANTE: Sempre recomende consultar o médico obstetra para questões médicas específicas.
-Nunca forneça diagnósticos — apenas informações e orientações gerais de saúde gestacional.`;
+  // Prompt de Engenharia para definir a personalidade da IA
+  const semanasGestacao = (typeof state !== 'undefined' && state.user && state.user.semanas) ? state.user.semanas : "não informada";
+  const systemPrompt = `Você é a Baby IA, assistente virtual do BabyCare Hub. A usuária está na semana ${semanasGestacao} de gestação.
+  DIRETRIZES DE ESTILO E CHAT:
+  • Seja extremamente direta, curta e objetiva. Evite introduções longas ou textões formais.
+  • Responda em formato de conversa de aplicativo (chat do WhatsApp), usando frases breves, mas informativas.
+  • Se a usuária disser apenas saudações como "Oi", "Olá" ou "Tudo bem", responda de volta de forma curta, carinhosa e pergunte como pode ajudar hoje, SEM listar dicas preventivas de uma vez.
+  • Use • como marcador apenas se receber uma pergunta que exija uma listagem direta.
+  • IMPORTANTE: Sempre recomende consultar o médico obstetra para questões médicas específicas. Nunca forneça diagnósticos.`;
 
   try {
-    const messages = [
-      ...state.chatHistory.slice(-10),
-      { role: 'user', content: text }
-    ];
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages
-      })
+    // Requisição assíncrona para o modelo Gemini 2.5 Flash do Google
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `${systemPrompt}\n\nPergunta da usuária: ${text}`,
     });
 
-    const data  = await resp.json();
-    const reply = data.content?.[0]?.text || 'Desculpe, não consegui processar. Tente novamente!';
     removeTypingIndicator();
+    
+    const reply = response.text || 'Desculpe, não consegui processar a resposta. Tente novamente!';
     addChatMessage('assistant', reply);
-  } catch {
+
+  } catch (error) {
+    console.error("Erro na Gemini IA:", error);
     removeTypingIndicator();
-    addChatMessage('assistant', 'Desculpe, ocorreu um erro de conexão. Tente novamente em breve! 💙');
+    addChatMessage('assistant', 'Desculpe, a Baby IA encontrou uma instabilidade nos servidores da Google. Pode tentar reenviar? 💙');
   }
 
-  $('chatSendBtn').disabled = false;
+  // Devolve o controle do botão para o usuário e foca na caixa de texto novamente
+  if (btnEnviar) {
+    btnEnviar.disabled = false;
+  }
   input.focus();
 }
 
+// 6. Vincula os cliques dos botões e a tecla Enter
 function setupChat() {
-  $('chatSendBtn').addEventListener('click', sendMessage);
-  $('chatInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') sendMessage();
-  });
+  const btnEnviar = document.getElementById('btnSendChat');
+  const inputChat = document.getElementById('chatInput');
+  const chatChipsContainer = document.getElementById('chatChips');
 
-  // Suggestion chips
-  $('chatChips').addEventListener('click', e => {
-    const chip = e.target.closest('.chip');
-    if (chip) {
-      $('chatInput').value = chip.textContent;
-      sendMessage();
-    }
-  });
+  if (btnEnviar) {
+    btnEnviar.onclick = sendMessage;
+  }
+
+  if (inputChat) {
+    inputChat.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    };
+  }
+
+  // ============================================================
+  // NOVO: ATIVAR OS CHIPS DE SUGESTÃO DE PERGUNTAS
+  // ============================================================
+  if (chatChipsContainer && inputChat) {
+    chatChipsContainer.addEventListener('click', (e) => {
+      // Verifica se o que foi clicado foi realmente um botão (class="chip")
+      if (e.target.classList.contains('chip')) {
+        const textoSugestao = e.target.textContent; // Pega o texto do botão
+        
+        inputChat.value = textoSugestao; // Joga o texto no input de texto do chat
+        sendMessage(); // Dispara o envio para a Gemini IA automaticamente
+      }
+    });
+  }
 }
 
 // ─── SETTINGS TOGGLES ─────────────────────────────────────────
@@ -1098,8 +1163,10 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnSaveOnboard').addEventListener('click', saveOnboard);
   $('btnGoogleLogin').addEventListener('click', doGoogleLogin);
   $('btnRecover').addEventListener('click', doRecoverPassword);
+  
   if ($('btnChangePhoto')) $('btnChangePhoto').addEventListener('click', acionarSeletorFoto);
   if ($('filePhotoPicker')) $('filePhotoPicker').addEventListener('change', processarNovaFoto);
+  
   monitorarSessao();
 
   // Initialize weekly display with default semana

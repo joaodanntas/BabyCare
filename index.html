@@ -6,6 +6,7 @@
   <title>BabyCare Hub</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/x-icon" href="./assets/favicon.ico"></head>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
 <script type="module" src="script.js"></script>
 <body class="light">
 
@@ -201,7 +202,7 @@
 <div id="screen-bebe" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="bebeLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="bebeAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -250,7 +251,7 @@
 <div id="screen-corpo" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="corpoLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="corpoAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -320,7 +321,7 @@
 <div id="screen-alimentacao" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="alimentacaoLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="alimentacaoAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -388,7 +389,7 @@
 <div id="screen-exercicios" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="exerciciosLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <button class="topbar-btn" data-goto="screen-chat">Fale com a IA</button>
       <button class="topbar-avatar" data-goto="screen-perfil"><img src="./assets/logo-circulo.png" id="exerciciosAvatar" class="topbar-avatar-img" alt="perfil"/></button>
@@ -453,7 +454,7 @@
 <div id="screen-chat" class="screen screen--chat">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="chatLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav" style="margin-left:auto">
       <button class="topbar-btn" data-goto="screen-home">&#8592; Voltar</button>
       <button class="topbar-btn topbar-btn--sair" data-sair="true">Sair</button>
@@ -463,7 +464,7 @@
       <div class="toggle-track"><div class="toggle-thumb"></div></div>
     </div>
   </header>
-  <div class="chat-body" id="chatBody">
+  <div class="chat-body" id="chatMessages">
     <div class="chat-msg chat-msg--bot">
       <img src="./assets/chatbot-avatar.png" id="chatBotAvatar" class="chat-avatar" alt="Baby IA"/>
       <div>
@@ -476,7 +477,7 @@
     </div>
     <p class="chat-suggestions-label">Sugestões de perguntas</p>
     <div class="chat-chips" id="chatChips">
-      <button class="chip">Como estou na 18ª semana?</button>
+      <button class="chip" id="chipSemana">Como estou na 18ª semana?</button>
       <button class="chip">Tenho náuseas, é normal?</button>
       <button class="chip">Quais exames devo fazer?</button>
       <button class="chip">Posso me exercitar?</button>
@@ -485,7 +486,7 @@
   </div>
   <div class="chat-input-row">
     <input class="chat-input" id="chatInput" type="text" placeholder="Digite aqui..." />
-    <button class="chat-send-btn" id="chatSendBtn">
+    <button class="chat-send-btn" id="btnSendChat">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
   </div>
@@ -495,7 +496,7 @@
 <div id="screen-ajuda" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="ajudaLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <span class="topbar-nav__item" data-goto="screen-home">Início</span>
       <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
@@ -669,7 +670,7 @@
 <div id="screen-email" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="emailLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <span class="topbar-nav__item" data-goto="screen-home">Início</span>
       <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
@@ -734,7 +735,7 @@
 <div id="screen-notif" class="screen">
   <header class="topbar">
     <img src="./assets/logo-white.png" id="notifLogo" class="topbar-logo-sm" alt="logo"/>
-    <span class="topbar-title">BabyCare Hub</span>
+    <span class="topbar-title" data-goto="screen-home" style="cursor: pointer;">BabyCare Hub</span>
     <nav class="topbar-nav">
       <span class="topbar-nav__item" data-goto="screen-home">Início</span>
       <span class="topbar-nav__item" data-goto="screen-perfil">Perfil</span>
