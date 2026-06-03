@@ -14,7 +14,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // 2. Configuração das credenciais
@@ -394,6 +395,64 @@ function doLogout() {
   showScreen('screen-login');
 }
 
+// ─── FUNÇÃO PARA EXPULSAR OS TRAÇOS E INJETAR OS DADOS REAIS ───
+function renderAppPerfil(dados) {
+  if (!dados) return;
+
+  // 1. Atualizações da Tela Home (Início)
+  if ($('homeWeekDisplay') && dados.semanas) {
+    $('homeWeekDisplay').textContent = dados.semanas + 'ª Semana';
+  }
+
+  // CÁLCULO DA DPP POR EXTENSO (IGUAL AO SEU IF DO ONBOARDING)
+  if ($('homePartoPrev') && dados.dum) {
+    // Corrige o fuso horário da string "AAAA-MM-DD" para não alterar o dia por acidente
+    const partes = dados.dum.split('-');
+    const dum = new Date(partes[0], partes[1] - 1, partes[2]);
+    const dpp = new Date(dum.getTime() + 280 * 864e5);
+    
+    const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const wk     = Math.ceil(dpp.getDate() / 7);
+    const ord    = ['1ª','2ª','3ª','4ª','5ª'];
+    
+    $('homePartoPrev').textContent = (ord[wk-1]||'') + ' Semana de ' + months[dpp.getMonth()];
+  }
+
+  // Busca dinamicamente na lista de semanas do seu script para alimentar o card "Seu Bebê"
+  if (typeof DADOS_SEMANAS !== 'undefined' && DADOS_SEMANAS[dados.semanas]) {
+    const infoSemana = DADOS_SEMANAS[dados.semanas];
+    if ($('homeFetoComparacao')) $('homeFetoComparacao').textContent = infoSemana.comparacao || '';
+    if ($('homeFetoMedida')) $('homeFetoMedida').textContent = infoSemana.medida || '';
+    
+    // Atualiza também os dados na tela específica do Bebê se o usuário navegar até lá
+    if ($('bebeWeekLabel')) $('bebeWeekLabel').textContent = 'Semana ' + dados.semanas;
+    if ($('bebePeso')) $('bebePeso').textContent = infoSemana.peso || '—';
+    if ($('bebeAltura')) $('bebeAltura').textContent = infoSemana.altura || '—';
+    if ($('bebeTip1')) $('bebeTip1').textContent = infoSemana.tip1 || '—';
+    if ($('bebeTip2')) $('bebeTip2').textContent = infoSemana.tip2 || '—';
+    if ($('bebeBottomTip')) $('bebeBottomTip').textContent = infoSemana.bottomTip || '—';
+    if ($('bebeJornada')) $('bebeJornada').textContent = `Semana ${dados.semanas} de 40`;
+    if ($('bebePct') && $('bebeFill')) {
+      const pct = Math.round((dados.semanas / 40) * 100);
+      $('bebePct').textContent = pct + '% concluído';
+      $('bebeFill').style.width = pct + '%';
+    }
+  }
+
+  // 2. Atualizações Oficiais do Menu Lateral de Perfil
+  if ($('perfilName') && dados.nome) $('perfilName').textContent = dados.nome;
+  if ($('perfilAge') && dados.idade)   $('perfilAge').textContent  = dados.idade + ' anos';
+  if ($('perfilWeek') && dados.semanas) $('perfilWeek').textContent = dados.semanas + 'ª Semana';
+
+  // 3. Atualizações Oficiais da Tela de Perfil (Mapeado direto com os dados salvos no banco)
+  if ($('pdAltura'))   $('pdAltura').textContent   = dados.altura ? dados.altura + ' m' : '—';
+  if ($('pdPeso'))     $('pdPeso').textContent     = dados.peso ? '~ ' + dados.peso + ' kg' : '—';
+  if ($('pdSang'))     $('pdSang').textContent     = dados.tipoSanguineo || '—';
+  if ($('pdTipoGest')) $('pdTipoGest').textContent = dados.tipoGestacao || '—';
+  if ($('pdAtiv'))     $('pdAtiv').textContent     = dados.praticaExercicio || '—';
+}
+
 // ─── DADOS SEMANAIS DO BEBÊ ───────────────────────────────────
 // Cada entrada: { comparacao, medida, peso, altura, tip1, tip2, bottomTip }
 const DADOS_SEMANAS = {
@@ -570,7 +629,7 @@ async function saveOnboard(e) {
   if (diasAtras > 294) { showToast('Data da DUM muito antiga (mais de 42 semanas). Verifique!'); $('oDum').focus(); return; }
   // ────────────────────────────────────────────────────────────
 
-  const sem = parseInt(semVal) || 18;
+  const sem = parseInt(semVal, 10) || 18;
   
   // Capturando as variáveis locais auxiliares antes de subir para a nuvem
   const sangVal   = $('oTipoSang').value  || '—';
@@ -578,7 +637,7 @@ async function saveOnboard(e) {
   const gestVal   = $('oTipoGest').value  || 'Única';
   const medicoVal = $('oMedico').value    || '—';
 
-  // 1. Criar o objeto com a estrutura idêntica para o Firestore Database
+  // 1. Criar o objeto com a estrutura idêntica para o Firestore Database [mapeado para o leitor]
   const dadosOnboarding = {
     nome: state.user.nome || 'Utilizadora',
     idade: idadeVal,
@@ -596,31 +655,28 @@ async function saveOnboard(e) {
   try {
     showToast('A guardar dados na nuvem...');
 
-    // 2. MÁGICA: Grava os dados usando o UID exclusivo gerado na tela de cadastro
+    // 2. Grava os dados usando o UID exclusivo gerado na tela de cadastro
     await setDoc(doc(db, "usuarios", user.uid), dadosOnboarding);
 
-    // 3. Atualiza o State local da aplicação (Se o banco aceitar com sucesso)
-    state.user.idade      = idadeVal;
-    state.user.altura     = altVal;
-    state.user.peso       = pesoVal;
-    state.user.sang       = sangVal;
-    state.user.semanas    = sem;
-    state.user.ativFisica = ativVal;
-    state.user.tipoGest   = gestVal;
-    state.user.medico     = medicoVal;
-    state.registered      = true;
+    // 3. Atualiza o State local de forma perfeitamente alinhada com o modelo do banco
+    state.user = dadosOnboarding;
+    state.registered = true;
 
-    // 4. Toda a sua lógica original de Update das Telas permanece intacta:
-    
-    // Update home
-    $('homeWeekDisplay').textContent = sem + 'ª Semana';
-    // Update exercises
-    $('exerWeekDisplay').textContent = sem + 'ª Semana';
+    // 4. Executa a função mágica que varre o index.html inserindo os dados
+    renderAppPerfil(dadosOnboarding);
 
-    // Update all weekly data (fetus size, bebe page, journey bar)
-    updateWeeklyData(sem);
+    // 5. Atualiza os dados semanais dinâmicos do seu app (como os cards do feto e exercícios)
+    if ($('exerWeekDisplay')) $('exerWeekDisplay').textContent = sem + 'ª Semana';
+    if (typeof updateWeeklyData === 'function') {
+      updateWeeklyData(sem);
+    }
 
-    // Calculate DPP from DUM
+    // 6. Atualizações textuais do cabeçalho de perfil lateral
+    if ($('perfilName')) $('perfilName').textContent = state.user.nome;
+    if ($('perfilAge'))  $('perfilAge').textContent  = state.user.idade + ' anos';
+    if ($('perfilWeek')) $('perfilWeek').textContent = sem + 'ª Semana';
+
+    // 7. Calcula e exibe a DPP customizada na home de forma limpa
     if (dumVal) {
       const dum    = new Date(dumVal);
       const dpp    = new Date(dum.getTime() + 280 * 864e5);
@@ -628,18 +684,10 @@ async function saveOnboard(e) {
                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
       const wk     = Math.ceil(dpp.getDate() / 7);
       const ord    = ['1ª','2ª','3ª','4ª','5ª'];
-      $('homePartoPrev').textContent = (ord[wk-1]||'') + ' Semana de ' + months[dpp.getMonth()];
+      if ($('homePartoPrev')) {
+        $('homePartoPrev').textContent = (ord[wk-1]||'') + ' Semana de ' + months[dpp.getMonth()];
+      }
     }
-
-    // Perfil display
-    $('perfilName').textContent = state.user.nome;
-    $('perfilAge').textContent  = state.user.idade !== '—' ? state.user.idade + ' anos' : '—';
-    $('perfilWeek').textContent = sem + 'ª Semana';
-    $('pdAltura').textContent   = state.user.altura !== '—' ? state.user.altura + ' m' : '—';
-    $('pdPeso').textContent     = state.user.peso   !== '—' ? '~ ' + state.user.peso + ' kg' : '—';
-    $('pdSang').textContent     = state.user.sang;
-    $('pdTipoGest').textContent = state.user.tipoGest;
-    $('pdAtiv').textContent     = state.user.ativFisica;
 
     showToast('Dados guardados com sucesso! 🌟');
     showScreen('screen-home');
@@ -946,6 +994,37 @@ function setupSplash() {
 
 // ─── MAIN INIT ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  function monitorarSessao() {
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        console.log("Usuário ativo detectado pelo observador:", user.email);
+        
+        try {
+          // Importa as dependências estruturais do Firestore necessárias para a leitura remota
+          const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+          const userDocRef = doc(db, "usuarios", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const dadosBanco = userDocSnap.data();
+            
+            // Alimenta o state global da aplicação
+            state.user = dadosBanco;
+            state.registered = true;
+
+            // Dispara a atualização imediata das telas com os dados do banco
+            renderAppPerfil(dadosBanco);
+          }
+        } catch (error) {
+          console.error("Erro ao sincronizar informações com o banco:", error);
+        }
+      } else {
+        // Se ninguém estiver logado, limpa o estado
+        state.registered = false;
+        state.user = {};
+      }
+    });
+  }
   // Wait for images.js to load (it's in the same page)
   initImages();
   setupNavigation();
@@ -961,6 +1040,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnSaveOnboard').addEventListener('click', saveOnboard);
   $('btnGoogleLogin').addEventListener('click', doGoogleLogin);
   $('btnRecover').addEventListener('click', doRecoverPassword);
+  monitorarSessao();
 
   // Initialize weekly display with default semana
   updateWeeklyData(state.user.semanas);
